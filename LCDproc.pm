@@ -1,11 +1,11 @@
 use 5.008001;
 
-our $VERSION = '0.03';
+our $VERSION = '0.031';
 package IO::LCDproc;
 
 =head1 NAME
 
-	IO::LCDproc - Perl extension to connect to an LCDproc ready display.
+IO::LCDproc - Perl extension to connect to an LCDproc ready display.
 
 =head1 SYNOPSIS
 
@@ -37,12 +37,12 @@ package IO::LCDproc;
 
 =head1 DESCRIPTION
 
-	Follow the example above. Pretty straight forward. You create a client, assign a screen,
-	add widgets, and then set the widgets.
+Follow the example above. Pretty straight forward. You create a client, assign a screen,
+add widgets, and then set the widgets.
 
 =head2 IO::LCDproc::Client
 
-	It is the back engine of the module. It generates the connection to a ready listening server.
+It is the back engine of the module. It generates the connection to a ready listening server.
 
 =head3 METHODS
 
@@ -50,6 +50,7 @@ package IO::LCDproc;
 
 ####################################
 package IO::LCDproc::Client;
+@IO::LCDproc::Client::ISA = qw(IO::LCDproc);
 
 use Carp;
 use Fcntl;
@@ -58,7 +59,7 @@ use IO::Socket::INET;
 =item new( name => 'Client_Name' [, host => $MYHOSTNAME] [, port => $MYPORTNUMBER] )
 
 	Constructor. Takes the following possible arguments (arguments must be given in key => value form):
-	C<host>, C<port>, and C<name>. C<name> is required.
+	host, port, and name. name is required.
 
 =cut
 
@@ -133,6 +134,7 @@ sub initialize {
 
 #####################3
 package IO::LCDproc::Screen;
+@IO::LCDproc::Screen::ISA = qw(IO::LCDproc);
 
 use Carp;
 
@@ -143,7 +145,7 @@ use Carp;
 =item new( name => 'MYNAME', client => $CLIENTREF )
 
 	Constructor. Allowed options:
-	C<heartbeat>.
+	heartbeat.
 	
 =cut
 
@@ -179,6 +181,7 @@ sub add {
 
 ######################
 package IO::LCDproc::Widget;
+@IO::LCDproc::Client::ISA = qw(IO::LCDproc);
 
 use Carp;
 
@@ -189,7 +192,7 @@ use Carp;
 =item new( name => 'MYNAME', screen => $SCREENREF )
 
 	Constructor. Allowed arguments:
-	C<align>, C<type> (string, title, vbar, hbar, ...), C<xPos>, C<yPos>, C<data>
+	align, type (string, title, vbar, hbar, ...), xPos, yPos, data
 
 =cut
 
@@ -213,9 +216,9 @@ sub new {
 
 =item set()
 
-	Sets the widget to the spec'd args. They may be given on the function call or the may be
-	pre specified.
-	C<xPos>, C<yPos>, C<data>
+Sets the widget to the spec'd args. They may be given on the function call or the may be
+pre specified.
+xPos, yPos, data
 
 =cut
 
@@ -225,6 +228,7 @@ sub set {
 	$self->{xPos} = $params{xPos} if($params{xPos});
 	$self->{yPos} = $params{yPos} if($params{yPos});
 	$self->{data} = $params{data} if($params{data});
+	$self->{data} = " " x $self->{screen}{client}{width} if(length( $self->{data} ) < 1 );
 	my $fh = $self->{screen}->{client}->{lcd};
 	print $fh "widget_set $self->{screen}->{name} $self->{name} $self->{xPos} $self->{yPos} {" .
 		($self->{align} =~ /center/ ? $self->_center($self->{data}) : $self->{data}) . "}\n";
@@ -254,16 +258,18 @@ sub save {
 
 sub restore {
 	my $self = shift;
-	$self->{data} = $self->{saved};
+	$self->{data}  = $self->{saved};
+	$self->{saved} = "";
 }
 
 1;
+
 __END__
 
 
 =head1 SEE ALSO
 
-  L<LCDd>
+L<LCDd>
 
 =head1 AUTHOR
 
