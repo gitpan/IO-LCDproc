@@ -1,6 +1,6 @@
 use 5.008001;
 
-our $VERSION = '0.031';
+our $VERSION = '0.032';
 package IO::LCDproc;
 
 =head1 NAME
