@@ -1,11 +1,9 @@
 use 5.008001;
 
-our $VERSION = '0.033';
+our $VERSION = '0.034';
 package IO::LCDproc;
 
-
-
-####################################
+###############################################################################
 package IO::LCDproc::Client;
 @IO::LCDproc::Client::ISA = qw(IO::LCDproc);
 
@@ -67,7 +65,7 @@ sub initialize {
 	}
 }
 
-#####################3
+###############################################################################
 package IO::LCDproc::Screen;
 @IO::LCDproc::Screen::ISA = qw(IO::LCDproc);
 
@@ -96,18 +94,19 @@ sub add {
 	}
 }
 
-######################
+###############################################################################
 package IO::LCDproc::Widget;
 @IO::LCDproc::Client::ISA = qw(IO::LCDproc);
 
 use Carp;
+use overload '++' => \&xIncrement;
 
 sub new {
 	my $proto		= shift;
 	my $class		= ref($proto) || $proto;
 	my %params		= @_;
 	croak "No name for Widget: $!" unless($params{name});
-	my $self			= {};
+	my $self		= {};
 	$self->{name}	= $params{name};
 	$self->{align}	= $params{align} || "left";
 	$self->{type}	= $params{type}  || "string";
@@ -127,12 +126,19 @@ sub set {
 	$self->{data} = " " x $self->{screen}{client}{width} if(length( $self->{data} ) < 1 );
 	my $fh = $self->{screen}->{client}->{lcd};
 	print $fh "widget_set $self->{screen}->{name} $self->{name} $self->{xPos} $self->{yPos} {" .
-		($self->{align} =~ /center/ ? $self->_center($self->{data}) : $self->{data}) . "}\n";
+		($self->{align} =~ /center/ ? $self->_center($self->{data}) :
+			($self->{align} =~ /right/ ? $self->_right($self->{data}) : $self->{data})
+		) . "}\n";
 }
 
 sub _center {
 	my $self = shift;
-	return ( " " x ( ($self->{screen}{client}{width} - length ( $_[0] ) ) / 2 ) . $_[0]);
+	return(" " x (($self->{screen}{client}{width} - length($_[0]))/2) . $_[0]);
+}
+
+sub _right {
+	my $self = shift;
+	return(" " x (($self->{screen}{client}{width} - length($_[0]))) . $_[0]);
 }
 
 sub save {
@@ -144,6 +150,12 @@ sub restore {
 	my $self = shift;
 	$self->{data}  = $self->{saved};
 	$self->{saved} = "";
+	$self->set;
+}
+
+sub xIncrement {
+	my $self = shift;
+	$self->{xPos}++
 }
 
 1;
@@ -206,7 +218,7 @@ It is the back engine of the module. It generates the connection to a ready list
 =item connect()
 
 	Establishes connection to LCDproc server (LCDd).
-	
+
 =item initialize()
 
 	Initializes client, screen and all the widgets  with the server.
@@ -215,23 +227,23 @@ It is the back engine of the module. It generates the connection to a ready list
 
 =head3 METHODS
 
-=item new( name => 'MYNAME', client => $CLIENTREF )
+=item new( name => 'MYNAME')
 
 	Constructor. Allowed options:
-	heartbeat.
-	
+	heartbeat => 1 or 0.
+
 =item add( @WIDGETS )
-	
+
 	Adds the given widgets to this screen.
 
 =head2 IO::LCDproc::Widget
 
 =head3 METHODS
 
-=item new( name => 'MYNAME', screen => $SCREENREF )
+=item new( name => 'MYNAME' )
 
 	Constructor. Allowed arguments:
-	align, type (string, title, vbar, hbar, ...), xPos, yPos, data
+	align (left, center, rigth), type (string, title, vbar, hbar, ...), xPos, yPos, data
 
 =item set()
 
@@ -245,7 +257,7 @@ It is the back engine of the module. It generates the connection to a ready list
 
 =item restore()
 
-	Restore previously saved data.
+	Restore previously saved data. (Implicitly calls set)
 
 =head1 SEE ALSO
 

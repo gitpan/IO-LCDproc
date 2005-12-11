@@ -7,3 +7,6 @@ Revision history for Perl extension IO::Lcdproc.
 
 0.3.2
 	bugfix: made test complete successfully
+
+0.3.4
+	logic fix.
